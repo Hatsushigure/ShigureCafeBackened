@@ -70,12 +70,44 @@ public class UserResourceController {
 
     @PutMapping("/{username}/email")
     public ResponseEntity<Void> updateEmail(@PathVariable String username, @RequestBody cafe.shigure.UserService.dto.UpdateEmailRequest request, @AuthenticationPrincipal User currentUser) {
-        if (!currentUser.getUsername().equals(username)) {
+        boolean isSelf = currentUser.getUsername().equals(username);
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+
+        if (!isSelf && !isAdmin) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        User user = userService.getUserByUsername(username);
-        userService.updateEmail(user.getId(), request.getNewEmail(), request.getVerificationCode());
+        User targetUser = userService.getUserByUsername(username);
+        
+        if (isAdmin && !isSelf) {
+            userService.updateEmailDirectly(targetUser.getId(), request.getNewEmail());
+        } else {
+            // Self update or Admin updating self (still requires verification for safety? Or just allow direct?)
+            // Usually if admin updates self, they might want to follow standard flow, or just direct. 
+            // Let's assume Admin updating anyone (including self) via this logic *could* be direct, 
+            // but the prompt implies "Admin management page". 
+            // If I am admin and I use the Profile page, I expect standard flow. 
+            // If I use Admin page, I expect direct flow.
+            // But the endpoint is shared.
+            // Let's say: if verification code is present, use standard. If not and Admin, use direct.
+            if (request.getVerificationCode() != null && !request.getVerificationCode().isEmpty()) {
+                 userService.updateEmail(targetUser.getId(), request.getNewEmail(), request.getVerificationCode());
+            } else if (isAdmin) {
+                 userService.updateEmailDirectly(targetUser.getId(), request.getNewEmail());
+            } else {
+                 throw new cafe.shigure.UserService.exception.BusinessException("Verification code required");
+            }
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{username}/role")
+    public ResponseEntity<Void> updateRole(@PathVariable String username, @RequestBody ChangeRoleRequest request, @AuthenticationPrincipal User currentUser) {
+        if (currentUser.getRole() != Role.ADMIN) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        User targetUser = userService.getUserByUsername(username);
+        userService.updateRole(targetUser.getId(), request.role());
         return ResponseEntity.ok().build();
     }
 
@@ -84,4 +116,5 @@ public class UserResourceController {
     }
 
     public record ChangePasswordRequest(String oldPassword, String newPassword) {}
+    public record ChangeRoleRequest(Role role) {}
 }

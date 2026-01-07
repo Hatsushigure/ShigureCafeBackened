@@ -239,6 +239,30 @@ public class UserService {
         userRepository.save(user);
     }
 
+    @Transactional
+    public void updateEmailDirectly(Long id, String newEmail) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("User not found"));
+
+        // Check if new email is already in use (excluding self)
+        userRepository.findByEmail(newEmail).ifPresent(existingUser -> {
+            if (!existingUser.getId().equals(id)) {
+                throw new BusinessException("Email already in use");
+            }
+        });
+
+        user.setEmail(newEmail);
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void updateRole(Long id, Role newRole) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("User not found"));
+        user.setRole(newRole);
+        userRepository.save(user);
+    }
+
     public java.util.List<User> getAllUsers() {
         return userRepository.findAll();
     }
