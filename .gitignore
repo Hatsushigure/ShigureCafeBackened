@@ -34,3 +34,4 @@ build/
 
 ### Gemini CLI ###
 GEMINI.md
+.gemini/

@@ -36,12 +36,20 @@ public class UserService {
     private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final cafe.shigure.UserService.repository.TokenBlacklistRepository tokenBlacklistRepository;
 
     @Transactional
-    public void sendVerificationCode(String email) {
-        if (userRepository.findByUsername(email).isPresent()) {
-            // 这里根据需求处理重名逻辑
+    public void sendVerificationCode(String email, String type) {
+        if ("REGISTER".equalsIgnoreCase(type) || "UPDATE_EMAIL".equalsIgnoreCase(type)) {
+            if (userRepository.findByEmail(email).isPresent()) {
+                throw new BusinessException("Email already in use");
+            }
+        } else if ("RESET_PASSWORD".equalsIgnoreCase(type)) {
+            if (userRepository.findByEmail(email).isEmpty()) {
+                throw new BusinessException("User not found");
+            }
         }
+
         // 生成 6 位验证码
         String code = String.format("%06d", new Random().nextInt(999999));
 
@@ -66,6 +74,7 @@ public class UserService {
                 )
         );
         var user = userRepository.findByUsername(request.getUsername())
+                .or(() -> userRepository.findByEmail(request.getUsername()))
                 .orElseThrow(() -> new BusinessException("用户不存在"));
         
         if (user.getStatus() != UserStatus.ACTIVE) {
@@ -74,6 +83,14 @@ public class UserService {
 
         var jwtToken = jwtService.generateToken(user);
         return new AuthResponse(jwtToken);
+    }
+
+    public void logout(String token) {
+        if (token != null && token.startsWith("Bearer ")) {
+            String jwt = token.substring(7);
+            java.util.Date expirationDate = jwtService.extractExpiration(jwt);
+            tokenBlacklistRepository.save(new cafe.shigure.UserService.model.TokenBlacklist(jwt, expirationDate));
+        }
     }
 
     @Transactional
@@ -89,7 +106,7 @@ public class UserService {
                 throw new BusinessException("用户被封禁");
             }
             // User is PENDING, verify code and refresh audit code
-            verifyCode(request);
+            verifyCode(request.getEmail(), request.getVerificationCode());
             
             // Check existing audit
             UserAudit audit = userAuditRepository.findByUserId(user.getId())
@@ -104,7 +121,7 @@ public class UserService {
         }
 
         // New User
-        verifyCode(request);
+        verifyCode(request.getEmail(), request.getVerificationCode());
 
         // 创建用户
         User user = new User();
@@ -123,17 +140,28 @@ public class UserService {
 
         return auditCode;
     }
+
+    @Transactional
+    public void resetPasswordByEmail(cafe.shigure.UserService.dto.ResetPasswordRequest request) {
+        verifyCode(request.getEmail(), request.getVerificationCode());
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BusinessException("用户不存在"));
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+    }
     
-    private void verifyCode(RegisterRequest request) {
+    private void verifyCode(String email, String code) {
         // 验证验证码
-        VerificationCode verificationCode = verificationCodeRepository.findByEmail(request.getEmail())
+        VerificationCode verificationCode = verificationCodeRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException("验证码不存在或已过期"));
 
         if (verificationCode.isExpired()) {
             throw new BusinessException("验证码已过期");
         }
 
-        if (!verificationCode.getCode().equals(request.getVerificationCode())) {
+        if (!verificationCode.getCode().equals(code)) {
             throw new BusinessException("验证码错误");
         }
 
@@ -183,6 +211,31 @@ public class UserService {
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    public void resetPassword(Long id, String newPassword) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("User not found"));
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void updateEmail(Long id, String newEmail, String verificationCode) {
+        verifyCode(newEmail, verificationCode);
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("User not found"));
+        
+        // 检查新邮箱是否已被使用 (排除自己)
+        userRepository.findByEmail(newEmail).ifPresent(existingUser -> {
+            if (!existingUser.getId().equals(id)) {
+                throw new BusinessException("Email already in use");
+            }
+        });
+
+        user.setEmail(newEmail);
         userRepository.save(user);
     }
 
