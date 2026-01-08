@@ -1,6 +1,7 @@
 package cafe.shigure.UserService.controller;
 
 import cafe.shigure.UserService.dto.UserResponse;
+import cafe.shigure.UserService.exception.BusinessException;
 import cafe.shigure.UserService.model.Role;
 import cafe.shigure.UserService.model.User;
 import cafe.shigure.UserService.service.UserService;
@@ -46,7 +47,7 @@ public class UserResourceController {
     @DeleteMapping("/{username}")
     public ResponseEntity<Void> deleteUser(@PathVariable String username, @AuthenticationPrincipal User currentUser) {
         if (currentUser.getUsername().equals(username)) {
-            throw new cafe.shigure.UserService.exception.BusinessException("You cannot delete yourself");
+            throw new BusinessException("SELF_DELETION_PROTECTED");
         }
         User user = userService.getUserByUsername(username);
         userService.deleteUser(user.getId());
@@ -85,20 +86,12 @@ public class UserResourceController {
         if (isAdmin && !isSelf) {
             userService.updateEmailDirectly(targetUser.getId(), request.getNewEmail());
         } else {
-            // Self update or Admin updating self (still requires verification for safety? Or just allow direct?)
-            // Usually if admin updates self, they might want to follow standard flow, or just direct. 
-            // Let's assume Admin updating anyone (including self) via this logic *could* be direct, 
-            // but the prompt implies "Admin management page". 
-            // If I am admin and I use the Profile page, I expect standard flow. 
-            // If I use Admin page, I expect direct flow.
-            // But the endpoint is shared.
-            // Let's say: if verification code is present, use standard. If not and Admin, use direct.
             if (request.getVerificationCode() != null && !request.getVerificationCode().isEmpty()) {
                  userService.updateEmail(targetUser.getId(), request.getNewEmail(), request.getVerificationCode());
             } else if (isAdmin) {
                  userService.updateEmailDirectly(targetUser.getId(), request.getNewEmail());
             } else {
-                 throw new cafe.shigure.UserService.exception.BusinessException("Verification code required");
+                 throw new BusinessException("VERIFICATION_CODE_REQUIRED");
             }
         }
         return ResponseEntity.ok().build();

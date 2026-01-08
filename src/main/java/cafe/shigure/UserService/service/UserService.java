@@ -44,11 +44,11 @@ public class UserService {
     public void sendVerificationCode(String email, String type) {
         if ("REGISTER".equalsIgnoreCase(type) || "UPDATE_EMAIL".equalsIgnoreCase(type)) {
             if (userRepository.findByEmail(email).isPresent()) {
-                throw new BusinessException("Email already in use");
+                throw new BusinessException("EMAIL_IN_USE");
             }
         } else if ("RESET_PASSWORD".equalsIgnoreCase(type)) {
             if (userRepository.findByEmail(email).isEmpty()) {
-                throw new BusinessException("User not found");
+                throw new BusinessException("USER_NOT_FOUND");
             }
         }
 
@@ -61,7 +61,7 @@ public class UserService {
 
         if (verificationCode.getLastSentTime() != null &&
                 verificationCode.getLastSentTime().plusSeconds(60).isAfter(LocalDateTime.now())) {
-            throw new BusinessException("操作过于频繁，请60秒后再试");
+            throw new BusinessException("RATE_LIMIT_EXCEEDED", java.util.Map.of("retryAfter", 60));
         }
 
         verificationCode.setEmail(email);
@@ -84,16 +84,16 @@ public class UserService {
         );
         var user = userRepository.findByUsername(request.getUsername())
                 .or(() -> userRepository.findByEmail(request.getUsername()))
-                .orElseThrow(() -> new BusinessException("用户不存在"));
+                .orElseThrow(() -> new BusinessException("USER_NOT_FOUND"));
         
         if (user.getStatus() == UserStatus.PENDING) {
-            throw new BusinessException("账号审核中，请稍后");
+            throw new BusinessException("ACCOUNT_PENDING");
         }
         if (user.getStatus() == UserStatus.BANNED) {
-            throw new BusinessException("账号被封禁，请联系管理员");
+            throw new BusinessException("ACCOUNT_BANNED");
         }
         if (user.getStatus() != UserStatus.ACTIVE) {
-            throw new BusinessException("账号状态异常，请联系管理员");
+            throw new BusinessException("ACCOUNT_INACTIVE");
         }
 
         var jwtToken = jwtService.generateToken(user);
@@ -115,10 +115,10 @@ public class UserService {
         if (existingUser.isPresent()) {
             User user = existingUser.get();
             if (user.getStatus() == UserStatus.ACTIVE) {
-                throw new BusinessException("用户已存在");
+                throw new BusinessException("USER_ALREADY_EXISTS");
             }
             if (user.getStatus() == UserStatus.BANNED) {
-                throw new BusinessException("用户被封禁");
+                throw new BusinessException("ACCOUNT_BANNED");
             }
             // User is PENDING, verify code and refresh audit code
             verifyCode(request.getEmail(), request.getVerificationCode());
@@ -139,7 +139,7 @@ public class UserService {
         verifyCode(request.getEmail(), request.getVerificationCode());
 
         if (request.getNickname() != null && request.getNickname().length() > 50) {
-            throw new BusinessException("Nickname too long (max 50 characters)");
+            throw new BusinessException("NICKNAME_TOO_LONG", java.util.Map.of("maxLength", 50));
         }
 
         // 创建用户
@@ -167,7 +167,7 @@ public class UserService {
         verifyCode(request.getEmail(), request.getVerificationCode());
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BusinessException("用户不存在"));
+                .orElseThrow(() -> new BusinessException("USER_NOT_FOUND"));
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
@@ -176,14 +176,14 @@ public class UserService {
     private void verifyCode(String email, String code) {
         // 验证验证码
         VerificationCode verificationCode = verificationCodeRepository.findByEmail(email)
-                .orElseThrow(() -> new BusinessException("验证码不存在或已过期"));
+                .orElseThrow(() -> new BusinessException("VERIFICATION_CODE_NOT_FOUND"));
 
         if (verificationCode.isExpired()) {
-            throw new BusinessException("验证码已过期");
+            throw new BusinessException("VERIFICATION_CODE_EXPIRED");
         }
 
         if (!verificationCode.getCode().equals(code)) {
-            throw new BusinessException("验证码错误");
+            throw new BusinessException("VERIFICATION_CODE_INVALID");
         }
 
         // 验证通过，删除验证码（防止复用）
@@ -192,7 +192,7 @@ public class UserService {
     
     public User getUserByAuditCode(String auditCode) {
         UserAudit audit = userAuditRepository.findByAuditCode(auditCode)
-                .orElseThrow(() -> new BusinessException("Invalid audit code"));
+                .orElseThrow(() -> new BusinessException("INVALID_AUDIT_CODE"));
         return audit.getUser();
     }
 
@@ -204,7 +204,7 @@ public class UserService {
 
     public cafe.shigure.UserService.dto.RegistrationDetailsResponse getRegistrationDetails(String auditCode) {
         UserAudit audit = userAuditRepository.findByAuditCode(auditCode)
-                .orElseThrow(() -> new BusinessException("Invalid audit code"));
+                .orElseThrow(() -> new BusinessException("INVALID_AUDIT_CODE"));
         User user = audit.getUser();
         return new cafe.shigure.UserService.dto.RegistrationDetailsResponse(
                 user.getUsername(),
@@ -219,15 +219,15 @@ public class UserService {
     @Transactional
     public void approveUser(String auditCode) {
         UserAudit audit = userAuditRepository.findByAuditCode(auditCode)
-                .orElseThrow(() -> new BusinessException("Invalid audit code"));
+                .orElseThrow(() -> new BusinessException("INVALID_AUDIT_CODE"));
         
         if (audit.isExpired()) {
-             throw new BusinessException("Audit code expired. Please request a new one.");
+             throw new BusinessException("AUDIT_CODE_EXPIRED");
         }
 
         User user = audit.getUser();
         if (user.getStatus() == UserStatus.ACTIVE) {
-            throw new BusinessException("User already active");
+            throw new BusinessException("USER_ALREADY_ACTIVE");
         }
         user.setStatus(UserStatus.ACTIVE);
         userRepository.save(user);
@@ -238,17 +238,17 @@ public class UserService {
 
     public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
-            throw new BusinessException("User not found");
+            throw new BusinessException("USER_NOT_FOUND");
         }
         userRepository.deleteById(id);
     }
 
     public void changePassword(Long id, String oldPassword, String newPassword) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("User not found"));
+                .orElseThrow(() -> new BusinessException("USER_NOT_FOUND"));
 
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
-            throw new BusinessException("Old password does not match");
+            throw new BusinessException("OLD_PASSWORD_MISMATCH");
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));
@@ -257,7 +257,7 @@ public class UserService {
 
     public void resetPassword(Long id, String newPassword) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("User not found"));
+                .orElseThrow(() -> new BusinessException("USER_NOT_FOUND"));
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
@@ -267,12 +267,12 @@ public class UserService {
         verifyCode(newEmail, verificationCode);
 
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("User not found"));
+                .orElseThrow(() -> new BusinessException("USER_NOT_FOUND"));
         
         // 检查新邮箱是否已被使用 (排除自己)
         userRepository.findByEmail(newEmail).ifPresent(existingUser -> {
             if (!existingUser.getId().equals(id)) {
-                throw new BusinessException("Email already in use");
+                throw new BusinessException("EMAIL_IN_USE");
             }
         });
 
@@ -283,12 +283,12 @@ public class UserService {
     @Transactional
     public void updateEmailDirectly(Long id, String newEmail) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("User not found"));
+                .orElseThrow(() -> new BusinessException("USER_NOT_FOUND"));
 
         // Check if new email is already in use (excluding self)
         userRepository.findByEmail(newEmail).ifPresent(existingUser -> {
             if (!existingUser.getId().equals(id)) {
-                throw new BusinessException("Email already in use");
+                throw new BusinessException("EMAIL_IN_USE");
             }
         });
 
@@ -299,7 +299,7 @@ public class UserService {
     @Transactional
     public void updateRole(Long id, Role newRole) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("User not found"));
+                .orElseThrow(() -> new BusinessException("USER_NOT_FOUND"));
         user.setRole(newRole);
         userRepository.save(user);
     }
@@ -310,21 +310,21 @@ public class UserService {
 
     public User getUserById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("User not found"));
+                .orElseThrow(() -> new BusinessException("USER_NOT_FOUND"));
     }
 
     public User getUserByUsername(String username) {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new BusinessException("User not found"));
+                .orElseThrow(() -> new BusinessException("USER_NOT_FOUND"));
     }
 
     @Transactional
     public void updateNickname(Long id, String nickname) {
         if (nickname != null && nickname.length() > 50) {
-            throw new BusinessException("Nickname too long (max 50 characters)");
+            throw new BusinessException("NICKNAME_TOO_LONG", java.util.Map.of("maxLength", 50));
         }
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("User not found"));
+                .orElseThrow(() -> new BusinessException("USER_NOT_FOUND"));
         user.setNickname(nickname);
         userRepository.save(user);
     }

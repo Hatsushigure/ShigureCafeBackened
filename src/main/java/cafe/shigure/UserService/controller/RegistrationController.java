@@ -27,7 +27,7 @@ public class RegistrationController {
     public ResponseEntity<Map<String, String>> register(@Valid @RequestBody RegisterRequest request) {
         String auditCode = userService.register(request);
         return ResponseEntity.created(URI.create("/api/v1/registrations/" + auditCode))
-                .body(Map.of("auditCode", auditCode, "message", "Registration pending approval"));
+                .body(Map.of("auditCode", auditCode));
     }
 
     @GetMapping

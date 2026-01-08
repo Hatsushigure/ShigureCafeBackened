@@ -1,5 +1,6 @@
 package cafe.shigure.UserService.exception;
 
+import cafe.shigure.UserService.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.DisabledException;
@@ -7,42 +8,53 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.Map;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<java.util.Map<String, String>> handleBusinessException(BusinessException e) {
-        // 返回 400 Bad Request 和具体的错误信息 (JSON)
-        return ResponseEntity.badRequest().body(java.util.Collections.singletonMap("message", e.getMessage()));
+    public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
+        return ResponseEntity.badRequest().body(ErrorResponse.of(e.getCode(), e.getMetadata()));
     }
 
     @ExceptionHandler(DisabledException.class)
-    public ResponseEntity<String> handleDisabledException(DisabledException e) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is disabled or pending approval");
+    public ResponseEntity<ErrorResponse> handleDisabledException(DisabledException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ErrorResponse.of("ACCOUNT_DISABLED"));
     }
 
     @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<java.util.Map<String, String>> handleAuthenticationException(AuthenticationException e) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(java.util.Collections.singletonMap("message", "Authentication failed: " + e.getMessage()));
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(AuthenticationException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ErrorResponse.of("AUTHENTICATION_FAILED"));
     }
 
     @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
-    public ResponseEntity<java.util.Map<String, String>> handleValidationExceptions(org.springframework.web.bind.MethodArgumentNotValidException ex) {
-        String message = ex.getBindingResult().getAllErrors().get(0).getDefaultMessage();
-        return ResponseEntity.badRequest().body(java.util.Collections.singletonMap("message", message));
+    public ResponseEntity<ErrorResponse> handleValidationExceptions(org.springframework.web.bind.MethodArgumentNotValidException ex) {
+        String field = ex.getBindingResult().getFieldError().getField();
+        String defaultMessage = ex.getBindingResult().getFieldError().getDefaultMessage();
+        
+        return ResponseEntity.badRequest().body(ErrorResponse.of("VALIDATION_FAILED", 
+                Map.of("field", field, "reason", defaultMessage)));
+    }
+
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(org.springframework.web.HttpRequestMethodNotSupportedException e) {
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(ErrorResponse.of("METHOD_NOT_ALLOWED"));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<java.util.Map<String, String>> handleAllExceptions(Exception e) {
-        // Log the exception for debugging
+    public ResponseEntity<ErrorResponse> handleAllExceptions(Exception e) {
         e.printStackTrace();
         
-        String message = "Internal Server Error";
+        String code = "INTERNAL_SERVER_ERROR";
         if (e instanceof org.springframework.dao.DataIntegrityViolationException) {
-            message = "Data integrity violation: possibly field too long or duplicate unique value";
+            code = "DATA_INTEGRITY_VIOLATION";
         }
         
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(java.util.Collections.singletonMap("message", message));
+                .body(ErrorResponse.of(code));
     }
 }

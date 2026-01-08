@@ -2,7 +2,6 @@ package cafe.shigure.UserService.controller;
 
 import cafe.shigure.UserService.dto.AuthResponse;
 import cafe.shigure.UserService.dto.LoginRequest;
-import cafe.shigure.UserService.dto.ResetPasswordRequest;
 import cafe.shigure.UserService.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
