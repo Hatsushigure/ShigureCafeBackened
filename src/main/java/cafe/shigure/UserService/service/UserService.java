@@ -1,6 +1,5 @@
 package cafe.shigure.UserService.service;
 
-import cafe.shigure.UserService.dto.AuditResponse;
 import cafe.shigure.UserService.dto.AuthResponse;
 import cafe.shigure.UserService.dto.LoginRequest;
 import cafe.shigure.UserService.dto.RegisterRequest;
@@ -197,34 +196,24 @@ public class UserService {
         return audit.getUser();
     }
 
-    public List<AuditResponse> getPendingAudits() {
+    public List<String> getAllAuditCodes() {
         return userAuditRepository.findAll().stream()
-                .map(audit -> new AuditResponse(
-                        audit.getUser().getId(),
-                        audit.getUser().getUsername(),
-                        audit.getUser().getEmail(),
-                        audit.getUser().getStatus(),
-                        audit.getAuditCode(),
-                        audit.isExpired()
-                ))
+                .map(UserAudit::getAuditCode)
                 .collect(Collectors.toList());
     }
 
-    @Transactional
-    public void approveAudit(Long auditId) {
-        UserAudit audit = userAuditRepository.findById(auditId)
-                .orElseThrow(() -> new BusinessException("Audit record not found"));
-
+    public cafe.shigure.UserService.dto.RegistrationDetailsResponse getRegistrationDetails(String auditCode) {
+        UserAudit audit = userAuditRepository.findByAuditCode(auditCode)
+                .orElseThrow(() -> new BusinessException("Invalid audit code"));
         User user = audit.getUser();
-        if (user.getStatus() == UserStatus.ACTIVE) {
-            // Already active, maybe just clean up the audit record if it still exists
-            userAuditRepository.delete(audit);
-            return;
-        }
-        
-        user.setStatus(UserStatus.ACTIVE);
-        userRepository.save(user);
-        userAuditRepository.delete(audit);
+        return new cafe.shigure.UserService.dto.RegistrationDetailsResponse(
+                user.getUsername(),
+                user.getNickname(),
+                user.getEmail(),
+                user.getStatus(),
+                audit.getAuditCode(),
+                audit.isExpired()
+        );
     }
 
     @Transactional

@@ -1,15 +1,19 @@
 package cafe.shigure.UserService.controller;
 
 import cafe.shigure.UserService.dto.RegisterRequest;
-import cafe.shigure.UserService.dto.UserResponse;
+import cafe.shigure.UserService.dto.RegistrationDetailsResponse;
+import cafe.shigure.UserService.model.Role;
 import cafe.shigure.UserService.model.User;
 import cafe.shigure.UserService.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -26,10 +30,17 @@ public class RegistrationController {
                 .body(Map.of("auditCode", auditCode, "message", "Registration pending approval"));
     }
 
+    @GetMapping
+    public ResponseEntity<List<String>> getAllRegistrations(@AuthenticationPrincipal User currentUser) {
+        if (currentUser == null || currentUser.getRole() != Role.ADMIN) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        return ResponseEntity.ok(userService.getAllAuditCodes());
+    }
+
     @GetMapping("/{auditCode}")
-    public ResponseEntity<UserResponse> checkRegistration(@PathVariable String auditCode) {
-        User user = userService.getUserByAuditCode(auditCode);
-        return ResponseEntity.ok(new UserResponse(user.getUsername(), user.getNickname(), user.getEmail(), user.getRole(), user.getStatus()));
+    public ResponseEntity<RegistrationDetailsResponse> checkRegistration(@PathVariable String auditCode) {
+        return ResponseEntity.ok(userService.getRegistrationDetails(auditCode));
     }
 
     @PatchMapping("/{auditCode}")
