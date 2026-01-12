@@ -4,9 +4,14 @@ import cafe.shigure.ShigureCafeBackened.model.Notice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 @Repository
 public interface NoticeRepository extends JpaRepository<Notice, Long> {
-    List<Notice> findAllByOrderByPinnedDescCreatedAtDesc();
+    @Query(value = "SELECT n FROM Notice n JOIN FETCH n.author ORDER BY n.pinned DESC, n.createdAt DESC",
+           countQuery = "SELECT count(n) FROM Notice n")
+    Page<Notice> findAllByOrderByPinnedDescCreatedAtDesc(Pageable pageable);
 }
