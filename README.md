@@ -33,7 +33,7 @@ The backend service for ShigureCafe, a robust and secure user management system 
 *   **Language:** Java 25
 *   **Security:** Spring Security & JJWT 0.12.6
 *   **Cache/Storage:** Redis (for verification codes and rate limiting)
-*   **Database:** MySQL 8.x with Spring Data JPA & Hibernate
+*   **Database:** MariaDB with Spring Data JPA & Hibernate
 *   **Email Integration:** Microsoft Graph SDK 6.19.0 & Azure Identity
 *   **MFA:** dev.samstevens.totp 1.7.1
 *   **Documentation:** Springdoc OpenAPI 2.8.14
@@ -44,7 +44,7 @@ The backend service for ShigureCafe, a robust and secure user management system 
 
 *   **Java 25** or higher.
 *   **Maven** (or use the provided `mvnw`).
-*   **MySQL** instance.
+*   **MariaDB** instance.
 *   **Redis** instance.
 
 ### Configuration
@@ -52,7 +52,7 @@ The backend service for ShigureCafe, a robust and secure user management system 
 Create a `.env` file in the root directory:
 
 ```env
-DB_URL=jdbc:mysql://localhost:3306/shigure_cafe?serverTimezone=UTC
+DB_URL=jdbc:mariadb://localhost:3306/shigure_cafe
 DB_USER=your_db_username
 DB_PASSWORD=your_db_password
 REDIS_HOST=localhost
