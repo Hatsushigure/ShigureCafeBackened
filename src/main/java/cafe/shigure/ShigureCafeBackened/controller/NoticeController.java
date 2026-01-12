@@ -2,6 +2,7 @@ package cafe.shigure.ShigureCafeBackened.controller;
 
 import cafe.shigure.ShigureCafeBackened.dto.NoticeRequest;
 import cafe.shigure.ShigureCafeBackened.dto.NoticeResponse;
+import cafe.shigure.ShigureCafeBackened.dto.NoticeReactionRequest;
 import cafe.shigure.ShigureCafeBackened.model.User;
 import cafe.shigure.ShigureCafeBackened.service.NoticeService;
 import jakarta.validation.Valid;
@@ -25,13 +26,16 @@ public class NoticeController {
 
     @GetMapping
     public ResponseEntity<Page<NoticeResponse>> getAllNotices(
-            @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(noticeService.getAllNotices(pageable));
+            @PageableDefault(size = 10) Pageable pageable,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(noticeService.getAllNotices(pageable, currentUser));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<NoticeResponse> getNoticeById(@PathVariable Long id) {
-        return ResponseEntity.ok(noticeService.getNoticeById(id));
+    public ResponseEntity<NoticeResponse> getNoticeById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(noticeService.getNoticeById(id, currentUser));
     }
 
     @PostMapping
@@ -46,8 +50,9 @@ public class NoticeController {
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<NoticeResponse> updateNotice(
             @PathVariable Long id,
-            @Valid @RequestBody NoticeRequest request) {
-        return ResponseEntity.ok(noticeService.updateNotice(id, request));
+            @Valid @RequestBody NoticeRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(noticeService.updateNotice(id, request, currentUser));
     }
 
     @DeleteMapping("/{id}")
@@ -55,5 +60,13 @@ public class NoticeController {
     public ResponseEntity<Void> deleteNotice(@PathVariable Long id) {
         noticeService.deleteNotice(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/reactions")
+    public ResponseEntity<NoticeResponse> toggleReaction(
+            @PathVariable Long id,
+            @Valid @RequestBody NoticeReactionRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(noticeService.toggleReaction(id, currentUser, request.getEmoji()));
     }
 }

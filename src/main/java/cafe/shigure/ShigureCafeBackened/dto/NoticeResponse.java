@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -19,6 +20,17 @@ public class NoticeResponse implements Serializable {
     private String content;
     private boolean pinned;
     private String authorNickname;
+    private List<ReactionCount> reactions;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ReactionCount implements Serializable {
+        private String emoji;
+        private Long count;
+        private boolean reacted;
+    }
 }

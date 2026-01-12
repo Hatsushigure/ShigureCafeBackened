@@ -37,6 +37,9 @@ public class AuthControllerTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private cafe.shigure.ShigureCafeBackened.repository.NoticeRepository noticeRepository;
+
     @MockitoBean
     private StringRedisTemplate redisTemplate;
     
@@ -51,6 +54,7 @@ public class AuthControllerTest {
 
     @BeforeEach
     public void setup() {
+        noticeRepository.deleteAll();
         userAuditRepository.deleteAll();
         userRepository.deleteAll();
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
@@ -83,6 +87,7 @@ public class AuthControllerTest {
         // Create active user
         User user = new User();
         user.setUsername("loginuser");
+        user.setNickname("Login User");
         user.setPassword(passwordEncoder.encode("password123"));
         user.setEmail("login@example.com");
         user.setRole(Role.USER);
@@ -105,6 +110,7 @@ public class AuthControllerTest {
         // Create pending user
         User user = new User();
         user.setUsername("pendinguser");
+        user.setNickname("Pending User");
         user.setPassword(passwordEncoder.encode("password123"));
         user.setEmail("pending@example.com");
         user.setRole(Role.USER);
@@ -119,7 +125,7 @@ public class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("ACCOUNT_PENDING"));
+                .andExpect(jsonPath("$.code").value("ACCOUNT_PENDING"));
     }
 
     @Test
@@ -127,6 +133,7 @@ public class AuthControllerTest {
         // Create active user
         User user = new User();
         user.setUsername("activeuser");
+        user.setNickname("Active User");
         user.setPassword(passwordEncoder.encode("correctpassword"));
         user.setEmail("active@example.com");
         user.setRole(Role.USER);
