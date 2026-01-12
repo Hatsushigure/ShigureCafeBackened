@@ -10,8 +10,9 @@ The backend service for ShigureCafe, a robust and secure user management system 
     *   **Redis-Powered Verification:** High-performance verification code storage and rate limiting using Redis.
     *   **Token Blacklisting:** Instant logout capability by blacklisting active JWTs.
     *   **Secure Passwords:** Strong hashing using BCrypt.
-*   **Notice Board System:**
+    *   **Notice Board System:**
     *   **Markdown & KaTeX Support:** Create rich, formatted notices with mathematical expressions.
+    *   **Notice Reaction System:** Users can react to announcements with a variety of emojis.
     *   **Pinned Notices:** Support for pinning important announcements to the top of the board.
     *   **Rich Metadata:** Tracking creation and update times for all notices.
 *   **User Registration & Audit Workflow:**
@@ -19,6 +20,7 @@ The backend service for ShigureCafe, a robust and secure user management system 
     *   **Audit Code System:** Administrators generate unique audit codes to approve/activate users.
     *   **Email Verification:** Integration with **Microsoft Graph API** for reliable email delivery.
 *   **User Management:**
+    *   **Minecraft Account Binding:** Securely link Minecraft accounts using **Microsoft OAuth2**.
     *   Role-Based Access Control (`USER`, `ADMIN`).
     *   Profile management: Nickname updates, email changes with verification.
     *   Account lifecycle management for administrators.
@@ -32,12 +34,12 @@ The backend service for ShigureCafe, a robust and secure user management system 
 *   **Framework:** Spring Boot 4.0.1
 *   **Language:** Java 25
 *   **Security:** Spring Security & JJWT 0.12.6
+*   **Integration:** Microsoft OAuth2 (for Minecraft Account Binding)
 *   **Cache/Storage:** Redis (for verification codes and rate limiting)
 *   **Database:** MariaDB with Spring Data JPA & Hibernate
 *   **Email Integration:** Microsoft Graph SDK 6.19.0 & Azure Identity
 *   **MFA:** dev.samstevens.totp 1.7.1
 *   **Documentation:** Springdoc OpenAPI 2.8.14
-
 ## Project Structure
 
 ```text
