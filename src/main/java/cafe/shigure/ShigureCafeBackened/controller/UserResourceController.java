@@ -44,13 +44,9 @@ public class UserResourceController {
             @RequestParam(defaultValue = "asc") String direction) {
         
         if (username != null && !username.isEmpty()) {
-             try {
-                 User user = userService.getUserByUsername(username);
-                 UserResponse response = userService.mapToUserResponse(user);
-                 return ResponseEntity.ok(Collections.singletonList(response));
-             } catch (Exception e) {
-                 return ResponseEntity.ok(Collections.emptyList());
-             }
+            User user = userService.getUserByUsername(username);
+            UserResponse response = userService.mapToUserResponse(user);
+            return ResponseEntity.ok(Collections.singletonList(response));
         }
         
         Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
