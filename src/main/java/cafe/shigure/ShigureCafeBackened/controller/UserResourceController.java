@@ -24,6 +24,7 @@ public class UserResourceController {
 
     private final UserService userService;
     private final cafe.shigure.ShigureCafeBackened.service.MinecraftAuthService minecraftAuthService;
+    private final cafe.shigure.ShigureCafeBackened.service.RateLimitService rateLimitService;
 
     @Value("${application.microsoft.minecraft.client-id}")
     private String microsoftClientId;
@@ -33,14 +34,14 @@ public class UserResourceController {
 
     @GetMapping
     public ResponseEntity<?> getUsers(
-            @RequestParam(required = false) Long t,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "username") String sortBy,
-            @RequestParam(defaultValue = "asc") String direction) {
+            @RequestParam(defaultValue = "asc") String direction,
+            @AuthenticationPrincipal User currentUser) {
         
-        if (!userService.checkUsersModified(t)) {
-             return ResponseEntity.status(HttpStatus.NOT_MODIFIED).build();
+        if (currentUser != null) {
+            rateLimitService.checkRateLimit("users:list:" + currentUser.getId(), 1);
         }
         
         Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();

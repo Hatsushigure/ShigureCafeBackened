@@ -25,16 +25,17 @@ import java.util.Map;
 public class NoticeController {
 
     private final NoticeService noticeService;
+    private final cafe.shigure.ShigureCafeBackened.service.RateLimitService rateLimitService;
 
     @GetMapping
     public ResponseEntity<?> getAllNotices(
-            @RequestParam(required = false) Long t,
             @PageableDefault(size = 10) Pageable pageable,
             @AuthenticationPrincipal User currentUser) {
-        if (noticeService.checkModified(t)) {
-            return ResponseEntity.ok(noticeService.getAllNotices(pageable, currentUser));
+        if (currentUser != null) {
+            rateLimitService.checkRateLimit("notices:list:" + currentUser.getId(), 1);
         }
-        return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_MODIFIED).build();
+        
+        return ResponseEntity.ok(noticeService.getAllNotices(pageable, currentUser));
     }
 
     @GetMapping("/{id}")

@@ -15,6 +15,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
+        if ("RATE_LIMIT_EXCEEDED".equals(e.getCode())) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(ErrorResponse.of(e.getCode(), e.getMetadata()));
+        }
         return ResponseEntity.badRequest().body(ErrorResponse.of(e.getCode(), e.getMetadata()));
     }
 

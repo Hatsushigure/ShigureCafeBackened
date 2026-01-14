@@ -61,7 +61,7 @@ public class UserService {
         redisTemplate.opsForValue().set(USER_LIST_LAST_UPDATED_KEY, String.valueOf(System.currentTimeMillis()));
     }
 
-    private Long getGlobalUserListTimestamp() {
+    public Long getGlobalUserListTimestamp() {
         String ts = redisTemplate.opsForValue().get(USER_LIST_LAST_UPDATED_KEY);
         return ts != null ? Long.parseLong(ts) : 0L;
     }
@@ -70,27 +70,9 @@ public class UserService {
         redisTemplate.opsForValue().set(AUDIT_LIST_LAST_UPDATED_KEY, String.valueOf(System.currentTimeMillis()));
     }
 
-    private Long getGlobalAuditListTimestamp() {
+    public Long getGlobalAuditListTimestamp() {
         String ts = redisTemplate.opsForValue().get(AUDIT_LIST_LAST_UPDATED_KEY);
         return ts != null ? Long.parseLong(ts) : 0L;
-    }
-
-    @org.springframework.transaction.annotation.Transactional(readOnly = true)
-    public boolean checkUsersModified(Long t) {
-        if (t == null) {
-            return true;
-        }
-        Long lastUpdated = getGlobalUserListTimestamp();
-        return lastUpdated > t;
-    }
-
-    @org.springframework.transaction.annotation.Transactional(readOnly = true)
-    public boolean checkAuditsNotModified(Long t) {
-        if (t == null) {
-            return false;
-        }
-        Long lastUpdated = getGlobalAuditListTimestamp();
-        return lastUpdated <= t;
     }
 
     @Transactional

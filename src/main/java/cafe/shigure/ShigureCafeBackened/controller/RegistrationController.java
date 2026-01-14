@@ -27,6 +27,7 @@ import java.util.Map;
 public class RegistrationController {
 
     private final UserService userService;
+    private final cafe.shigure.ShigureCafeBackened.service.RateLimitService rateLimitService;
 
     @PostMapping
     public ResponseEntity<Map<String, String>> register(@Valid @RequestBody RegisterRequest request) {
@@ -37,7 +38,6 @@ public class RegistrationController {
 
     @GetMapping
     public ResponseEntity<?> getAllRegistrations(
-            @RequestParam(required = false) Long t,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "user.username") String sortBy,
@@ -47,9 +47,8 @@ public class RegistrationController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        if (userService.checkAuditsNotModified(t)) {
-             return ResponseEntity.status(HttpStatus.NOT_MODIFIED).build();
-        }
+        String identifier = currentUser.getId().toString();
+        rateLimitService.checkRateLimit("audits:list:" + identifier, 1);
         
         Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);

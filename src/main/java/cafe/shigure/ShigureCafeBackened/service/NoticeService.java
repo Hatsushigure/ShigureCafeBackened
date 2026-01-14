@@ -40,18 +40,9 @@ public class NoticeService {
         redisTemplate.opsForValue().set(NOTICE_LIST_LAST_UPDATED_KEY, String.valueOf(System.currentTimeMillis()));
     }
 
-    private Long getGlobalNoticeListTimestamp() {
+    public Long getGlobalNoticeListTimestamp() {
         String ts = redisTemplate.opsForValue().get(NOTICE_LIST_LAST_UPDATED_KEY);
         return ts != null ? Long.parseLong(ts) : 0L;
-    }
-
-    @Transactional(readOnly = true)
-    public boolean checkModified(Long t) {
-        if (t == null) {
-            return true;
-        }
-        Long lastUpdated = getGlobalNoticeListTimestamp();
-        return lastUpdated > t;
     }
 
     @Transactional(readOnly = true)
