@@ -1,5 +1,6 @@
 package cafe.shigure.ShigureCafeBackened.dto;
 
+import cafe.shigure.ShigureCafeBackened.model.ReactionType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,7 +12,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 public class NoticeReactionDTO implements Serializable {
-    private String emoji;
+    private ReactionType type;
     private Long count;
     private boolean reacted;
 }

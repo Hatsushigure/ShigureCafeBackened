@@ -4,6 +4,7 @@ import cafe.shigure.ShigureCafeBackened.dto.*;
 import cafe.shigure.ShigureCafeBackened.exception.BusinessException;
 import cafe.shigure.ShigureCafeBackened.model.Notice;
 import cafe.shigure.ShigureCafeBackened.model.NoticeReaction;
+import cafe.shigure.ShigureCafeBackened.model.ReactionType;
 import cafe.shigure.ShigureCafeBackened.model.User;
 import cafe.shigure.ShigureCafeBackened.repository.NoticeReactionRepository;
 import cafe.shigure.ShigureCafeBackened.repository.NoticeRepository;
@@ -72,18 +73,18 @@ public class NoticeService {
     }
 
     @Transactional
-    public List<NoticeReactionDTO> toggleReaction(Long noticeId, User user, String emoji) {
+    public List<NoticeReactionDTO> toggleReaction(Long noticeId, User user, ReactionType type) {
         Notice notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new BusinessException("NOTICE_NOT_FOUND"));
 
-        Optional<NoticeReaction> reactionOpt = noticeReactionRepository.findByNoticeAndUserAndEmoji(notice, user, emoji);
+        Optional<NoticeReaction> reactionOpt = noticeReactionRepository.findByNoticeAndUserAndType(notice, user, type);
 
         if (reactionOpt.isPresent()) {
             noticeReactionRepository.delete(reactionOpt.get());
         } else {
             User managedUser = userRepository.findById(user.getId())
                     .orElseThrow(() -> new BusinessException("USER_NOT_FOUND"));
-            NoticeReaction reaction = new NoticeReaction(notice, managedUser, emoji);
+            NoticeReaction reaction = new NoticeReaction(notice, managedUser, type);
             noticeReactionRepository.save(reaction);
         }
 
@@ -121,19 +122,19 @@ public class NoticeService {
     }
 
     private List<NoticeReactionDTO> mapReactionsToDTO(List<NoticeReaction> reactions, User currentUser) {
-        Map<String, Long> counts = reactions.stream()
-                .collect(Collectors.groupingBy(NoticeReaction::getEmoji, Collectors.counting()));
+        Map<ReactionType, Long> counts = reactions.stream()
+                .collect(Collectors.groupingBy(NoticeReaction::getType, Collectors.counting()));
 
-        List<String> userEmojis = reactions.stream()
+        List<ReactionType> userTypes = reactions.stream()
                 .filter(r -> r.getUser().getId().equals(currentUser.getId()))
-                .map(NoticeReaction::getEmoji)
+                .map(NoticeReaction::getType)
                 .collect(Collectors.toList());
 
         return counts.entrySet().stream()
                 .map(entry -> NoticeReactionDTO.builder()
-                        .emoji(entry.getKey())
+                        .type(entry.getKey())
                         .count(entry.getValue())
-                        .reacted(userEmojis.contains(entry.getKey()))
+                        .reacted(userTypes.contains(entry.getKey()))
                         .build())
                 .collect(Collectors.toList());
     }

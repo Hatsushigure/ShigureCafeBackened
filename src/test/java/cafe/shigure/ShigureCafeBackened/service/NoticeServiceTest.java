@@ -9,6 +9,7 @@ import cafe.shigure.ShigureCafeBackened.model.User;
 import cafe.shigure.ShigureCafeBackened.repository.NoticeReactionRepository;
 import cafe.shigure.ShigureCafeBackened.repository.NoticeRepository;
 import cafe.shigure.ShigureCafeBackened.repository.UserRepository;
+import cafe.shigure.ShigureCafeBackened.model.ReactionType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -62,67 +63,67 @@ class NoticeServiceTest {
 
     @Test
     void toggleReaction_shouldAddSecondReactionSuccessfully() {
-        String emoji1 = "👍";
-        String emoji2 = "❤️";
+        ReactionType type1 = ReactionType.THUMBS_UP;
+        ReactionType type2 = ReactionType.HEART;
 
         when(noticeRepository.findById(1L)).thenReturn(Optional.of(notice));
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         
-        when(noticeReactionRepository.findByNoticeAndUserAndEmoji(notice, user, emoji1)).thenReturn(Optional.empty());
-        when(noticeReactionRepository.findByNoticeAndUserAndEmoji(notice, user, emoji2)).thenReturn(Optional.empty());
+        when(noticeReactionRepository.findByNoticeAndUserAndType(notice, user, type1)).thenReturn(Optional.empty());
+        when(noticeReactionRepository.findByNoticeAndUserAndType(notice, user, type2)).thenReturn(Optional.empty());
         
         List<NoticeReaction> reactionsAfterFirst = new ArrayList<>();
-        reactionsAfterFirst.add(new NoticeReaction(notice, user, emoji1));
+        reactionsAfterFirst.add(new NoticeReaction(notice, user, type1));
         
         List<NoticeReaction> reactionsAfterSecond = new ArrayList<>();
-        reactionsAfterSecond.add(new NoticeReaction(notice, user, emoji1));
-        reactionsAfterSecond.add(new NoticeReaction(notice, user, emoji2));
+        reactionsAfterSecond.add(new NoticeReaction(notice, user, type1));
+        reactionsAfterSecond.add(new NoticeReaction(notice, user, type2));
 
         when(noticeReactionRepository.findByNotice(notice))
             .thenReturn(reactionsAfterFirst)
             .thenReturn(reactionsAfterSecond);
 
         // Action 1: Add first reaction
-        List<NoticeReactionDTO> result1 = noticeService.toggleReaction(1L, user, emoji1);
+        List<NoticeReactionDTO> result1 = noticeService.toggleReaction(1L, user, type1);
         verify(noticeReactionRepository).save(any(NoticeReaction.class));
         assertEquals(1, result1.size());
-        assertEquals(emoji1, result1.get(0).getEmoji());
+        assertEquals(type1, result1.get(0).getType());
 
         // Action 2: Add second reaction
-        List<NoticeReactionDTO> result2 = noticeService.toggleReaction(1L, user, emoji2);
+        List<NoticeReactionDTO> result2 = noticeService.toggleReaction(1L, user, type2);
         verify(noticeReactionRepository, times(2)).save(any(NoticeReaction.class));
         
         assertEquals(2, result2.size(), "Should have two reactions");
-        assertTrue(result2.stream().anyMatch(r -> r.getEmoji().equals(emoji1)));
-        assertTrue(result2.stream().anyMatch(r -> r.getEmoji().equals(emoji2)));
+        assertTrue(result2.stream().anyMatch(r -> r.getType().equals(type1)));
+        assertTrue(result2.stream().anyMatch(r -> r.getType().equals(type2)));
     }
 
     @Test
     void toggleReaction_shouldRemoveReaction_whenSameEmojiToggled() {
-        String emoji = "👍";
-        NoticeReaction reaction = new NoticeReaction(notice, user, emoji);
+        ReactionType type = ReactionType.THUMBS_UP;
+        NoticeReaction reaction = new NoticeReaction(notice, user, type);
         
         when(noticeRepository.findById(1L)).thenReturn(Optional.of(notice));
-        when(noticeReactionRepository.findByNoticeAndUserAndEmoji(notice, user, emoji)).thenReturn(Optional.of(reaction));
+        when(noticeReactionRepository.findByNoticeAndUserAndType(notice, user, type)).thenReturn(Optional.of(reaction));
         when(noticeReactionRepository.findByNotice(notice)).thenReturn(new ArrayList<>());
 
-        noticeService.toggleReaction(1L, user, emoji);
+        noticeService.toggleReaction(1L, user, type);
 
         verify(noticeReactionRepository).delete(reaction);
     }
 
     @Test
     void toggleReaction_shouldNotUpdateTimestamp() {
-        String emoji = "👍";
+        ReactionType type = ReactionType.THUMBS_UP;
         long oldTimestamp = System.currentTimeMillis() - 10000;
         notice.setUpdatedAt(oldTimestamp);
 
         when(noticeRepository.findById(1L)).thenReturn(Optional.of(notice));
-        when(noticeReactionRepository.findByNoticeAndUserAndEmoji(notice, user, emoji)).thenReturn(Optional.empty());
+        when(noticeReactionRepository.findByNoticeAndUserAndType(notice, user, type)).thenReturn(Optional.empty());
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(noticeReactionRepository.findByNotice(notice)).thenReturn(new ArrayList<>());
 
-        noticeService.toggleReaction(1L, user, emoji);
+        noticeService.toggleReaction(1L, user, type);
 
         assertEquals(oldTimestamp, notice.getUpdatedAt(), "UpdatedAt timestamp should NOT be updated");
     }

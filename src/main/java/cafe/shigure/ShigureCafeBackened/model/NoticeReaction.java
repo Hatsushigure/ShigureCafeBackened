@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "notice_reactions", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"notice_id", "user_id", "emoji"})
+    @UniqueConstraint(columnNames = {"notice_id", "user_id", "type"})
 })
 public class NoticeReaction {
 
@@ -26,12 +26,13 @@ public class NoticeReaction {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String emoji;
+    private ReactionType type;
 
-    public NoticeReaction(Notice notice, User user, String emoji) {
+    public NoticeReaction(Notice notice, User user, ReactionType type) {
         this.notice = notice;
         this.user = user;
-        this.emoji = emoji;
+        this.type = type;
     }
 }

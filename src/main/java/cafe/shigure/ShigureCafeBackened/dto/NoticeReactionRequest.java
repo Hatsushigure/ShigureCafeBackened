@@ -1,6 +1,7 @@
 package cafe.shigure.ShigureCafeBackened.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import cafe.shigure.ShigureCafeBackened.model.ReactionType;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,6 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class NoticeReactionRequest {
-    @NotBlank
-    private String emoji;
+    @NotNull
+    private ReactionType type;
 }

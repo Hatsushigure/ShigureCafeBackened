@@ -1,12 +1,18 @@
 package cafe.shigure.ShigureCafeBackened.controller;
 
 import cafe.shigure.ShigureCafeBackened.dto.SystemUpdatesResponse;
+import cafe.shigure.ShigureCafeBackened.model.ReactionType;
 import cafe.shigure.ShigureCafeBackened.service.CacheService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/system")
@@ -22,5 +28,12 @@ public class SystemController {
                 cacheService.getTimestamp(CacheService.USER_LIST_KEY),
                 cacheService.getTimestamp(CacheService.AUDIT_LIST_KEY)
         ));
+    }
+
+    @GetMapping("/reaction-types")
+    public ResponseEntity<List<Map<String, String>>> getReactionTypes() {
+        return ResponseEntity.ok(Arrays.stream(ReactionType.values())
+                .map(type -> Map.of("name", type.name(), "emoji", type.getEmoji()))
+                .collect(Collectors.toList()));
     }
 }

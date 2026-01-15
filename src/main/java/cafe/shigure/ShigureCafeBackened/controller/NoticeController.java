@@ -82,8 +82,8 @@ public class NoticeController {
     @PostMapping("/{id}/reactions")
     public ResponseEntity<List<NoticeReactionDTO>> toggleReaction(
             @PathVariable Long id,
-            @Valid @RequestBody NoticeReactionRequest request,
-            @AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.ok(noticeService.toggleReaction(id, currentUser, request.getEmoji()));
+            @AuthenticationPrincipal User currentUser,
+            @RequestBody NoticeReactionRequest request) {
+        return ResponseEntity.ok(noticeService.toggleReaction(id, currentUser, request.getType()));
     }
 }
