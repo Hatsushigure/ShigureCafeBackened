@@ -101,18 +101,31 @@ class UserServiceTest {
 
     @Test
     void getMinecraftWhitelist_shouldReturnList() {
-        User user = new User();
-        user.setMinecraftUsername("Player1");
-        user.setMinecraftUuid("uuid-1");
-        user.setStatus(UserStatus.ACTIVE);
+        User user1 = new User();
+        user1.setMinecraftUsername("Player1");
+        user1.setMinecraftUuid("12345678-1234-1234-1234-123456789012");
+        user1.setStatus(UserStatus.ACTIVE);
+
+        User user2 = new User();
+        user2.setMinecraftUsername("Player2");
+        user2.setMinecraftUuid("abcdef1234567890abcdef1234567890"); // No hyphens
+        user2.setStatus(UserStatus.ACTIVE);
 
         when(userRepository.findByStatusAndMinecraftUuidIsNotNullAndMinecraftUsernameIsNotNull(UserStatus.ACTIVE))
-                .thenReturn(List.of(user));
+                .thenReturn(List.of(user1, user2));
 
         var result = userService.getMinecraftWhitelist();
 
-        assertEquals(1, result.size());
-        assertEquals("Player1", result.get(0).username());
-        assertEquals("uuid-1", result.get(0).uuid());
+        assertEquals(2, result.size());
+
+        // Check first user (already hyphenated)
+        assertEquals("Player1", result.get(0).name());
+        assertEquals("12345678-1234-1234-1234-123456789012", result.get(0).uuid());
+
+        // Check second user (needs formatting)
+        assertEquals("Player2", result.get(1).name());
+        assertEquals("abcdef12-3456-7890-abcd-ef1234567890", result.get(1).uuid());
     }
 }
+
+    

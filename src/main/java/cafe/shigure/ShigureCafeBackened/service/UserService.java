@@ -507,7 +507,25 @@ public class UserService {
     public List<MinecraftWhitelistResponse> getMinecraftWhitelist() {
         return userRepository.findByStatusAndMinecraftUuidIsNotNullAndMinecraftUsernameIsNotNull(UserStatus.ACTIVE)
                 .stream()
-                .map(user -> new MinecraftWhitelistResponse(user.getMinecraftUsername(), user.getMinecraftUuid()))
+                .map(user -> new MinecraftWhitelistResponse(
+                        formatUuid(user.getMinecraftUuid()),
+                        user.getMinecraftUsername()))
                 .collect(Collectors.toList());
     }
+
+    private String formatUuid(String uuid) {
+        if (uuid == null) {
+            return null;
+        }
+        // If length is 32 (without hyphens), insert them
+        if (uuid.length() == 32) {
+            return uuid.replaceFirst(
+                    "(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})",
+                    "$1-$2-$3-$4-$5"
+            );
+        }
+        return uuid;
+    }
 }
+
+    

@@ -57,6 +57,18 @@ public class MinecraftControllerTest {
         user.setMinecraftUuid("12345678-1234-1234-1234-123456789012");
         userRepository.save(user);
 
+        // Create active user with non-hyphenated Minecraft UUID
+        User user2 = new User();
+        user2.setUsername("mcuser2");
+        user2.setNickname("MC User 2");
+        user2.setPassword(passwordEncoder.encode("password123"));
+        user2.setEmail("mc2@example.com");
+        user2.setRole(Role.USER);
+        user2.setStatus(UserStatus.ACTIVE);
+        user2.setMinecraftUsername("PlayerTwo");
+        user2.setMinecraftUuid("abcdef1234567890abcdef1234567890");
+        userRepository.save(user2);
+
         // Create active user without Minecraft info
         User userNoMc = new User();
         userNoMc.setUsername("nomcuser");
@@ -82,8 +94,8 @@ public class MinecraftControllerTest {
         mockMvc.perform(get("/api/v1/minecraft/whitelist")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].username").value("PlayerOne"))
-                .andExpect(jsonPath("$[0].uuid").value("12345678-1234-1234-1234-123456789012"));
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[?(@.name == 'PlayerOne')].uuid").value("12345678-1234-1234-1234-123456789012"))
+                .andExpect(jsonPath("$[?(@.name == 'PlayerTwo')].uuid").value("abcdef12-3456-7890-abcd-ef1234567890"));
     }
 }

@@ -1,4 +1,4 @@
 package cafe.shigure.ShigureCafeBackened.dto;
 
-public record MinecraftWhitelistResponse(String username, String uuid) {
+public record MinecraftWhitelistResponse(String uuid, String name) {
 }
