@@ -70,7 +70,7 @@ public class MinecraftControllerTest {
                 """.formatted(now);
 
         // First sync: sends a message, should get nothing back (threshold = now)
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/minecraft/message-sync")
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/minecraft/chat-sync")
                         .header("X-API-KEY", "shigure-cafe-secret-key")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
@@ -89,7 +89,7 @@ public class MinecraftControllerTest {
                 }
                 """.formatted(now - 1);
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/minecraft/message-sync")
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/minecraft/chat-sync")
                         .header("X-API-KEY", "shigure-cafe-secret-key")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json2))
@@ -109,7 +109,7 @@ public class MinecraftControllerTest {
                 }
                 """;
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/minecraft/message-sync")
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/minecraft/chat-sync")
                         .header("X-API-KEY", "wrong-key")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))

@@ -37,7 +37,7 @@ public class MinecraftController {
         return ResponseEntity.ok(minecraftService.getChatMessages(pageable));
     }
 
-    @PostMapping("/message-sync")
+    @PostMapping("/chat-sync")
     public ResponseEntity<List<ChatMessageResponse>> syncChatMessages(@Valid @RequestBody ChatSyncRequest request) {
         return ResponseEntity.ok(minecraftService.syncChatMessages(request));
     }

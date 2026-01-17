@@ -5,7 +5,9 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "chat_messages")
+@Table(name = "chat_messages", indexes = {
+        @Index(name = "idx_chat_messages_timestamp", columnList = "timestamp")
+})
 public class ChatMessage {
 
     @Id
