@@ -43,8 +43,10 @@ public class MinecraftService {
                 List<ChatMessageResponse> messages = cachedObjects.stream()
                         .map(obj -> (ChatMessageResponse) obj)
                         .collect(Collectors.toList());
+                long totalElements = chatMessageRepository.count();
+                int totalPages = (int) Math.ceil((double) totalElements / pageable.getPageSize());
                 return new PagedResponse<>(messages, 0, pageable.getPageSize(), 
-                        chatMessageRepository.count(), (long) Math.ceil((double) chatMessageRepository.count() / pageable.getPageSize()), true);
+                        totalElements, totalPages, true, System.currentTimeMillis());
             }
         }
 
@@ -84,5 +86,4 @@ public class MinecraftService {
         // 3. Still publish local event for this instance
         eventPublisher.publishEvent(new ChatMessageEvent(this, resp, senderSessionId));
     }
-}
 }
