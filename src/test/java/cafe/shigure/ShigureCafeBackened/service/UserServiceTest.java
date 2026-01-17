@@ -1,6 +1,9 @@
 package cafe.shigure.ShigureCafeBackened.service;
 
+import cafe.shigure.ShigureCafeBackened.dto.MinecraftWhitelistResponse;
 import cafe.shigure.ShigureCafeBackened.exception.BusinessException;
+import cafe.shigure.ShigureCafeBackened.model.User;
+import cafe.shigure.ShigureCafeBackened.model.UserStatus;
 import cafe.shigure.ShigureCafeBackened.repository.TokenBlacklistRepository;
 import cafe.shigure.ShigureCafeBackened.repository.UserAuditRepository;
 import cafe.shigure.ShigureCafeBackened.repository.UserRepository;
@@ -15,6 +18,7 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -93,5 +97,22 @@ class UserServiceTest {
         verify(rateLimitService).checkRateLimit(eq("verify:" + email), anyLong());
         verify(emailService).sendSimpleMessage(eq(email), any(), any());
         verify(valueOperations).set(eq("verify:code:" + email), anyString(), eq(5L), eq(TimeUnit.MINUTES));
+    }
+
+    @Test
+    void getMinecraftWhitelist_shouldReturnList() {
+        User user = new User();
+        user.setMinecraftUsername("Player1");
+        user.setMinecraftUuid("uuid-1");
+        user.setStatus(UserStatus.ACTIVE);
+
+        when(userRepository.findByStatusAndMinecraftUuidIsNotNullAndMinecraftUsernameIsNotNull(UserStatus.ACTIVE))
+                .thenReturn(List.of(user));
+
+        var result = userService.getMinecraftWhitelist();
+
+        assertEquals(1, result.size());
+        assertEquals("Player1", result.get(0).username());
+        assertEquals("uuid-1", result.get(0).uuid());
     }
 }

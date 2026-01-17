@@ -504,4 +504,10 @@ public class UserService {
         cacheService.updateTimestamp(CacheService.USER_LIST_KEY);
     }
 
+    public List<MinecraftWhitelistResponse> getMinecraftWhitelist() {
+        return userRepository.findByStatusAndMinecraftUuidIsNotNullAndMinecraftUsernameIsNotNull(UserStatus.ACTIVE)
+                .stream()
+                .map(user -> new MinecraftWhitelistResponse(user.getMinecraftUsername(), user.getMinecraftUuid()))
+                .collect(Collectors.toList());
+    }
 }
