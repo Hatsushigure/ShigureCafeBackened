@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+@SpringBootTest(properties = "application.security.api-key=test-api-key")
 @AutoConfigureMockMvc
 public class MinecraftControllerTest {
 
@@ -40,8 +40,12 @@ public class MinecraftControllerTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private org.springframework.data.redis.core.RedisTemplate<String, Object> redisTemplate;
+
     @BeforeEach
     public void setup() {
+        redisTemplate.delete("minecraft:chat:latest");
         chatMessageRepository.deleteAll();
         noticeRepository.deleteAll();
         userAuditRepository.deleteAll();
@@ -49,8 +53,55 @@ public class MinecraftControllerTest {
     }
 
     @Test
-    public void testGetWhitelist() throws Exception {
-        // ... (existing test logic)
+    public void testGetWhitelistWithApiKey() throws Exception {
+        mockMvc.perform(get("/api/v1/minecraft/whitelist")
+                        .header("Cafe-API-Key", "test-api-key"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void testGetWhitelistWithOldApiKeyHeader() throws Exception {
+        mockMvc.perform(get("/api/v1/minecraft/whitelist")
+                        .header("X-API-KEY", "test-api-key"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void testGetWhitelistAsAdmin() throws Exception {
+        User admin = new User();
+        admin.setUsername("admin");
+        admin.setNickname("Admin");
+        admin.setEmail("admin@example.com");
+        admin.setPassword("password");
+        admin.setRole(Role.ADMIN);
+        admin.setStatus(UserStatus.ACTIVE);
+        admin = userRepository.save(admin);
+
+        mockMvc.perform(get("/api/v1/minecraft/whitelist")
+                        .with(user(admin)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void testGetWhitelistAsUser() throws Exception {
+        User user = new User();
+        user.setUsername("user");
+        user.setNickname("User");
+        user.setEmail("user@example.com");
+        user.setPassword("password");
+        user.setRole(Role.USER);
+        user.setStatus(UserStatus.ACTIVE);
+        user = userRepository.save(user);
+
+        mockMvc.perform(get("/api/v1/minecraft/whitelist")
+                        .with(user(user)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void testGetWhitelistUnauthorized() throws Exception {
+        mockMvc.perform(get("/api/v1/minecraft/whitelist"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

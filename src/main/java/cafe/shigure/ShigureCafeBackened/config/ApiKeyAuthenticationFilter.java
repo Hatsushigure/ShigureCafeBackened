@@ -29,7 +29,7 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-        String requestApiKey = request.getHeader("X-API-KEY");
+        String requestApiKey = request.getHeader("Cafe-API-Key");
 
         if (apiKey != null && !apiKey.isEmpty() && apiKey.equals(requestApiKey)) {
             var authority = new SimpleGrantedAuthority("API_CLIENT");

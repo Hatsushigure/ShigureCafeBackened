@@ -1,18 +1,5 @@
 package cafe.shigure.ShigureCafeBackened.websocket;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.server.ServerHttpRequest;
-import org.springframework.http.server.ServerHttpResponse;
-import org.springframework.http.server.ServletServerHttpRequest;
-import org.springframework.stereotype.Component;
-import org.springframework.web.socket.WebSocketHandler;
-import org.springframework.web.socket.server.HandshakeInterceptor;
-
-import java.util.Map;
-
-import cafe.shigure.ShigureCafeBackened.service.JwtService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +14,8 @@ import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 
 import java.util.Map;
+
+import cafe.shigure.ShigureCafeBackened.service.JwtService;
 
 @Slf4j
 @Component
@@ -44,39 +33,40 @@ public class MinecraftWebSocketInterceptor implements HandshakeInterceptor {
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
                                    WebSocketHandler wsHandler, Map<String, Object> attributes) {
         
-        // 1. Try API Key Authentication (primarily for MCDR plugins)
-        String requestApiKey = request.getHeaders().getFirst("X-API-KEY");
-        if (requestApiKey == null && request instanceof ServletServerHttpRequest) {
-            requestApiKey = ((ServletServerHttpRequest) request).getServletRequest().getParameter("apiKey");
+        if (!(request instanceof ServletServerHttpRequest servletRequest)) {
+            log.warn("Unauthorized WebSocket handshake attempt: not a servlet request");
+            response.setStatusCode(HttpStatus.UNAUTHORIZED);
+            return false;
         }
+
+        // 1. Try API Key Authentication (primarily for MCDR plugins)
+        String requestApiKey = servletRequest.getServletRequest().getParameter("cafe_api_key");
 
         if (apiKey != null && !apiKey.isEmpty() && apiKey.equals(requestApiKey)) {
             return true;
         }
 
         // 2. Try JWT Authentication (primarily for Web users)
-        if (request instanceof ServletServerHttpRequest) {
-            String token = ((ServletServerHttpRequest) request).getServletRequest().getParameter("token");
-            if (token != null && !token.isEmpty()) {
-                try {
-                    // Check blacklist
-                    if (tokenBlacklistRepository.existsByToken(token)) {
-                        response.setStatusCode(HttpStatus.UNAUTHORIZED);
-                        return false;
-                    }
-
-                    String username = jwtService.extractUsername(token);
-                    if (username != null) {
-                        UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-                        if (jwtService.isTokenValid(token, userDetails)) {
-                            // Optionally store user details in attributes if needed
-                            attributes.put("user", userDetails);
-                            return true;
-                        }
-                    }
-                } catch (Exception e) {
-                    log.warn("JWT validation failed for WebSocket handshake: {}", e.getMessage());
+        String token = servletRequest.getServletRequest().getParameter("token");
+        if (token != null && !token.isEmpty()) {
+            try {
+                // Check blacklist
+                if (tokenBlacklistRepository.existsByToken(token)) {
+                    response.setStatusCode(HttpStatus.UNAUTHORIZED);
+                    return false;
                 }
+
+                String username = jwtService.extractUsername(token);
+                if (username != null) {
+                    UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+                    if (jwtService.isTokenValid(token, userDetails)) {
+                        // Optionally store user details in attributes if needed
+                        attributes.put("user", userDetails);
+                        return true;
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("JWT validation failed for WebSocket handshake: {}", e.getMessage());
             }
         }
 
