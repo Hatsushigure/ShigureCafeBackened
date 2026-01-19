@@ -74,39 +74,35 @@ src/main/java/cafe/shigure/ShigureCafeBackened/
 
 ### Configuration
 
-The application requires the following environment variables. You can source them from a `.env` file or set them in your environment:
+Fill out the `.env.example` file and source it. Here's a quick look:
 
 ```env
-# Database
-DB_URL=jdbc:mariadb://localhost:3306/shigure_cafe
-DB_USER=your_db_username
-DB_PASSWORD=your_db_password
+# MariaDB Passwords
+DB_PASSWORD='YourDBPasswordHere'
+DB_ROOT_PASSWORD='YourRootPasswordHere'
 
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=your_redis_password
+# Redis Password
+REDIS_PASSWORD='YourRedisPasswordHere'
 
-# Security
-API_KEY=your_internal_api_key
+# Mail and Minecraft OAuth2 Credentials
+MAIL_TENANT_ID='xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+MAIL_CLIENT_ID='xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+MAIL_CLIENT_SECRET='YourSecretHere'
+MAIL_FROM='noreply@example.com'
+MINECRAFT_TENANT_ID='xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+MINECRAFT_CLIENT_ID='xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+MINECRAFT_CLIENT_SECRET='YourSecretHere'
 
-# Microsoft Graph (Email)
-MAIL_TENANT_ID=your_mail_tenant_id
-MAIL_CLIENT_ID=your_mail_client_id
-MAIL_CLIENT_SECRET=your_mail_client_secret
+# S3 Configuration
+S3_ENDPOINT='https://your-s3-endpoint.com'
+S3_ACCESS_KEY='YourAccessKeyHere'
+S3_SECRET_KEY='YourSecretKeyHere'
+S3_BUCKET='your-bucket-name'
+S3_PUBLIC_URL='https://your-s3-endpoint.com/your-bucket-name'
+S3_REGION='auto'
 
-# Microsoft OAuth (Minecraft)
-MINECRAFT_TENANT_ID=your_minecraft_tenant_id
-MINECRAFT_CLIENT_ID=your_minecraft_client_id
-MINECRAFT_CLIENT_SECRET=your_minecraft_client_secret
-
-# S3 Storage
-S3_ENDPOINT=your_s3_endpoint
-S3_ACCESS_KEY=your_s3_access_key
-S3_SECRET_KEY=your_s3_secret_key
-S3_BUCKET=your_s3_bucket_name
-S3_PUBLIC_URL=your_s3_public_access_url
-S3_REGION=auto
+# The api key for interacting with ShigureCafePlugin
+API_KEY='YourApiKeyHere'
 ```
 
 ### Running the Application
