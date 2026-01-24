@@ -48,3 +48,5 @@ application:
     bucket: ${S3_BUCKET:shigure-cafe-test}
     public-url: ${S3_PUBLIC_URL:http://localhost:9000/shigure-cafe-test}
     region: ${S3_REGION:auto}
+  turnstile:
+    secret-key: ${TURNSTILE_SECRET_KEY}

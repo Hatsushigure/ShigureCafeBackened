@@ -4,6 +4,8 @@ import cafe.shigure.ShigureCafeBackened.annotation.RateLimit;
 import cafe.shigure.ShigureCafeBackened.dto.AuthResponse;
 import cafe.shigure.ShigureCafeBackened.dto.LoginRequest;
 import cafe.shigure.ShigureCafeBackened.dto.ResetPasswordRequest;
+import cafe.shigure.ShigureCafeBackened.exception.BusinessException;
+import cafe.shigure.ShigureCafeBackened.service.TurnstileService;
 import cafe.shigure.ShigureCafeBackened.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -16,10 +18,14 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final UserService userService;
+    private final TurnstileService turnstileService;
 
     @PostMapping("/token")
     @RateLimit(key = "login", useIp = true, milliseconds = 1000)
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+        if (!turnstileService.verifyToken(request.getTurnstileToken())) {
+            throw new BusinessException("INVALID_CAPTCHA");
+        }
         return ResponseEntity.ok(userService.login(request));
     }
 
@@ -30,6 +36,9 @@ public class AuthController {
 
     @PostMapping("/password-reset")
     public ResponseEntity<Void> resetPassword(@RequestBody ResetPasswordRequest request) {
+        if (!turnstileService.verifyToken(request.getTurnstileToken())) {
+            throw new BusinessException("INVALID_CAPTCHA");
+        }
         userService.resetPasswordByEmail(request);
         return ResponseEntity.ok().build();
     }
@@ -42,10 +51,16 @@ public class AuthController {
 
     @PostMapping("/verification-codes")
     public ResponseEntity<Void> sendCode(@RequestBody EmailRequest request) {
+        if (!turnstileService.verifyToken(request.turnstileToken())) {
+            throw new BusinessException("INVALID_CAPTCHA");
+        }
         userService.sendVerificationCode(request.email(), request.type());
         return ResponseEntity.ok().build();
     }
 
-    public record EmailRequest(String email, String type) {}
-    public record TwoFactorRequest(String username, String code) {}
+    public record EmailRequest(String email, String type, String turnstileToken) {
+    }
+
+    public record TwoFactorRequest(String username, String code) {
+    }
 }

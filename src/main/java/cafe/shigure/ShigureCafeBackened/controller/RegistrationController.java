@@ -4,8 +4,10 @@ import cafe.shigure.ShigureCafeBackened.annotation.RateLimit;
 import cafe.shigure.ShigureCafeBackened.dto.PagedResponse;
 import cafe.shigure.ShigureCafeBackened.dto.RegisterRequest;
 import cafe.shigure.ShigureCafeBackened.dto.RegistrationDetailsResponse;
+import cafe.shigure.ShigureCafeBackened.exception.BusinessException;
 import cafe.shigure.ShigureCafeBackened.model.User;
 import cafe.shigure.ShigureCafeBackened.service.RateLimitService;
+import cafe.shigure.ShigureCafeBackened.service.TurnstileService;
 import cafe.shigure.ShigureCafeBackened.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,10 +29,14 @@ public class RegistrationController {
 
     private final UserService userService;
     private final RateLimitService rateLimitService;
+    private final TurnstileService turnstileService;
 
     @PostMapping
     @RateLimit(key = "register", useIp = true, milliseconds = 5000)
     public ResponseEntity<Map<String, String>> register(@Valid @RequestBody RegisterRequest request) {
+        if (!turnstileService.verifyToken(request.getTurnstileToken())) {
+            throw new BusinessException("INVALID_CAPTCHA");
+        }
         String auditCode = userService.register(request);
         return ResponseEntity.created(URI.create("/api/v1/registrations/" + auditCode))
                 .body(Map.of("auditCode", auditCode));
