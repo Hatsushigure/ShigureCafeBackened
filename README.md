@@ -109,8 +109,8 @@ S3_BUCKET='your-bucket-name'
 S3_PUBLIC_URL='https://your-s3-endpoint.com/your-bucket-name'
 S3_REGION='auto'
 
-# The api key for interacting with ShigureCafePlugin
-API_KEY='YourApiKeyHere'
+# The api key for backend, bot and plugin interaction
+CAFE_API_KEY='YourApiKeyHere'
 
 # Cloudflare Turnstile Configuration
 TURNSTILE_SECRET_KEY='YourTurnstileSecretKeyHere'
